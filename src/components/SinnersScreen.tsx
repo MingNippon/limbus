@@ -23,6 +23,7 @@ interface SinnersScreenProps {
 export const SinnersScreen: React.FC<SinnersScreenProps> = ({ save, onUpdateSave }) => {
   const [selectedSinnerId, setSelectedSinnerId] = useState<number>(1);
   const [activeTab, setActiveTab] = useState<'identities' | 'ego'>('identities');
+  const [mobileTab, setMobileTab] = useState<'roster' | 'workshop'>('roster');
   const [previewPose, setPreviewPose] = useState<string>('idle');
   const [slashVfxId, setSlashVfxId] = useState<number | null>(null);
 
@@ -149,20 +150,58 @@ export const SinnersScreen: React.FC<SinnersScreenProps> = ({ save, onUpdateSave
   };
 
   return (
-    <div className="w-full h-full flex gap-4 p-4 overflow-hidden">
+    <div className="w-full h-full flex flex-col lg:flex-row gap-3 sm:gap-4 p-2.5 sm:p-4 overflow-hidden">
+      {/* MOBILE SEGMENTED VIEW SWITCHER (Visible only on <lg screens) */}
+      <div className="flex lg:hidden items-center justify-between gap-2 p-1.5 bg-stone-950/90 rounded-xl border border-amber-500/30 shrink-0">
+        <button
+          onClick={() => {
+            soundManager.playSfx('ui_click');
+            setMobileTab('roster');
+          }}
+          className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold font-display tracking-wider flex items-center justify-center gap-1.5 transition cursor-pointer ${
+            mobileTab === 'roster'
+              ? 'bg-red-900 border border-amber-400 text-amber-200 shadow-md'
+              : 'bg-stone-900/80 text-stone-400 border border-stone-800 hover:text-white'
+          }`}
+        >
+          <Users className="w-3.5 h-3.5" />
+          ROSTER ({save.deployedSinnerIds.length}/6)
+        </button>
+        <button
+          onClick={() => {
+            soundManager.playSfx('ui_click');
+            setMobileTab('workshop');
+          }}
+          className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold font-display tracking-wider flex items-center justify-center gap-1.5 transition cursor-pointer ${
+            mobileTab === 'workshop'
+              ? 'bg-red-900 border border-amber-400 text-amber-200 shadow-md'
+              : 'bg-stone-900/80 text-stone-400 border border-stone-800 hover:text-white'
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+          #{selectedSinner.numberStr} {selectedSinner.name}
+        </button>
+      </div>
+
       {/* LEFT: 12 SINNERS ROSTER GRID */}
-      <div className="w-[38%] limbus-panel rounded-xl p-3.5 flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between border-b border-amber-500/30 pb-2.5 mb-3">
+      <div
+        className={`limbus-panel rounded-xl p-3 sm:p-3.5 flex flex-col min-h-0 overflow-hidden ${
+          mobileTab === 'roster'
+            ? 'flex flex-1 w-full lg:w-[36%] lg:max-w-md lg:flex-initial'
+            : 'hidden lg:flex lg:w-[36%] lg:max-w-md lg:flex-initial'
+        }`}
+      >
+        <div className="flex items-center justify-between border-b border-amber-500/30 pb-2 mb-2.5 shrink-0">
           <div className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-amber-400" />
-            <h2 className="font-display text-base font-bold text-amber-200 tracking-wider">
-              LCB SINNERS ROSTER ({save.deployedSinnerIds.length}/6 DEPLOYED)
+            <Users className="w-4 h-4 text-amber-400" />
+            <h2 className="font-display text-sm sm:text-base font-bold text-amber-200 tracking-wider">
+              LCB ROSTER ({save.deployedSinnerIds.length}/6 DEPLOYED)
             </h2>
           </div>
-          <span className="text-[11px] text-stone-400">Click Sinner to Inspect</span>
+          <span className="text-[10px] sm:text-[11px] text-stone-400">Tap to inspect</span>
         </div>
 
-        <div className="grid grid-cols-3 gap-2.5 overflow-y-auto pr-1 flex-1">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5 overflow-y-auto pr-1 flex-1 min-h-0 touch-scroll">
           {SINNERS.map((sinner) => {
             const eqId = save.equippedIdentityBySinner[sinner.id];
             const eqIdentity =
@@ -181,8 +220,9 @@ export const SinnersScreen: React.FC<SinnersScreenProps> = ({ save, onUpdateSave
                   setSelectedSinnerId(sinner.id);
                   const eq = save.equippedIdentityBySinner[sinner.id];
                   if (eq) setInspectedIdentityId(eq);
+                  setMobileTab('workshop');
                 }}
-                className={`relative rounded-lg border overflow-hidden cursor-pointer transition flex flex-col justify-between group ${
+                className={`relative rounded-lg border overflow-hidden cursor-pointer transition flex flex-col justify-between group shrink-0 h-auto min-h-[190px] ${
                   isSelected
                     ? 'border-amber-300 ring-2 ring-amber-400/80 bg-amber-950/30'
                     : deployIdx !== -1
@@ -190,27 +230,27 @@ export const SinnersScreen: React.FC<SinnersScreenProps> = ({ save, onUpdateSave
                     : 'border-stone-800 bg-black/70 opacity-80 hover:opacity-100'
                 }`}
               >
-                {/* Top Badges */}
-                <div className="relative h-28 w-full bg-gradient-to-b from-stone-900 to-black overflow-hidden">
+                {/* Top Badges & Face Portrait (centered at 30% to keep full face & eyes in focus) */}
+                <div className="relative h-28 sm:h-32 w-full bg-gradient-to-b from-stone-900 to-black overflow-hidden shrink-0">
                   <img
                     src={sinner.portraitUrl}
                     alt={sinner.name}
-                    className="w-full h-full object-cover object-top group-hover:scale-105 transition duration-300"
+                    className="w-full h-full object-cover object-[center_30%] group-hover:scale-105 transition duration-300"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/30 pointer-events-none" />
 
-                  <span className="absolute top-1 left-1.5 font-bebas text-sm text-amber-300 bg-black/80 px-1.5 rounded border border-amber-500/40">
+                  <span className="absolute top-1 left-1 font-bebas text-xs sm:text-sm text-amber-300 bg-black/85 px-1.5 py-0.5 rounded border border-amber-500/40 z-10 leading-none">
                     #{sinner.numberStr}
                   </span>
 
                   {deployIdx !== -1 && (
-                    <span className="absolute top-1 right-1.5 px-1.5 py-0.5 rounded bg-red-800 border border-amber-300 text-[9px] font-extrabold text-amber-200 shadow">
+                    <span className="absolute top-1 right-1 px-1.5 py-0.5 rounded bg-red-800 border border-amber-300 text-[8px] sm:text-[9px] font-extrabold text-amber-200 shadow z-10 leading-none">
                       SLOT #{deployIdx + 1}
                     </span>
                   )}
 
                   {/* Rarity 0 / 000 */}
-                  <div className="absolute bottom-1 left-1.5 flex items-center gap-0.5">
+                  <div className="absolute bottom-1 left-1.5 flex items-center gap-0.5 z-10">
                     {Array.from({ length: eqIdentity.rarity }).map((_, idx) => (
                       <span
                         key={idx}
@@ -219,18 +259,18 @@ export const SinnersScreen: React.FC<SinnersScreenProps> = ({ save, onUpdateSave
                     ))}
                   </div>
 
-                  <span className="absolute bottom-1 right-1.5 text-[10px] font-mono-num font-bold text-amber-200 bg-black/80 px-1 rounded">
+                  <span className="absolute bottom-1 right-1.5 text-[9px] sm:text-[10px] font-mono-num font-bold text-amber-200 bg-black/85 px-1 rounded z-10">
                     Lv.{lv} • UT{ut}
                   </span>
                 </div>
 
                 {/* Bottom Name & Deploy Toggle */}
                 <div className="p-2 bg-stone-950 flex flex-col gap-1">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-1">
                     <span className="font-display text-xs font-bold text-white truncate">
                       {sinner.name}
                     </span>
-                    <span className="text-[10px] font-mono-num text-purple-300">
+                    <span className="text-[10px] font-mono-num text-purple-300 shrink-0">
                       {save.egoshards[sinner.id] || 0} Shards
                     </span>
                   </div>
@@ -256,7 +296,11 @@ export const SinnersScreen: React.FC<SinnersScreenProps> = ({ save, onUpdateSave
       </div>
 
       {/* RIGHT: IDENTITY & E.G.O WORKSHOP */}
-      <div className="flex-1 limbus-panel rounded-xl p-5 flex flex-col overflow-hidden">
+      <div
+        className={`limbus-panel rounded-xl p-3.5 sm:p-5 flex flex-col min-h-0 flex-1 overflow-hidden ${
+          mobileTab === 'workshop' ? 'flex w-full' : 'hidden lg:flex'
+        }`}
+      >
         {/* Top Sinner Header */}
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-amber-500/30 pb-3 mb-4">
           <div className="flex items-center gap-3.5">
@@ -312,9 +356,9 @@ export const SinnersScreen: React.FC<SinnersScreenProps> = ({ save, onUpdateSave
         </div>
 
         {activeTab === 'identities' ? (
-          <div className="flex-1 flex flex-col overflow-y-auto pr-1 space-y-4">
+          <div className="flex-1 flex flex-col overflow-y-auto pr-1 space-y-4 min-h-0 touch-scroll pb-6">
             {/* Identity Selector Cards */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
               {sinnerIdentities.map((idItem) => {
                 const unlocked = save.unlockedIdentityIds.includes(idItem.id);
                 const equipped = equippedIdentityId === idItem.id;
@@ -602,7 +646,7 @@ export const SinnersScreen: React.FC<SinnersScreenProps> = ({ save, onUpdateSave
           </div>
         ) : (
           /* E.G.O LOADOUT TAB */
-          <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+          <div className="flex-1 overflow-y-auto space-y-3 pr-1 min-h-0 touch-scroll pb-6">
             {sinnerEgos.map((ego) => {
               const unlocked = save.unlockedEgoIds.includes(ego.id);
               const equippedForRisk =

@@ -1,5 +1,10 @@
 import { IdentityData, SinnerData } from '../types/game';
 
+export function getSinnerAvatarUrl(sinnerId?: number): string {
+  const s = SINNERS.find((x) => x.id === sinnerId);
+  return s?.portraitUrl || '/assets/sinners/donquixote.png';
+}
+
 export const SINNERS: SinnerData[] = [
   {
     id: 1,

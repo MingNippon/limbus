@@ -60,10 +60,10 @@ export const StoryCutsceneModal: React.FC<StoryCutsceneModalProps> = ({
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-black/80 pointer-events-none" />
 
       {/* Top Theatre Header */}
-      <div className="relative z-20 flex items-center justify-between px-8 py-4 border-b border-amber-500/30 bg-black/70">
-        <div className="flex items-center gap-3">
-          <img src="/assets/ui/red_ribbon.png" alt="" className="h-7 w-auto object-contain" />
-          <span className="font-display text-sm font-bold tracking-widest text-amber-200 uppercase">
+      <div className="relative z-20 flex items-center justify-between px-3.5 sm:px-8 py-2 sm:py-4 border-b border-amber-500/30 bg-black/85 gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <img src="/assets/ui/red_ribbon.png" alt="" className="h-5 sm:h-7 w-auto object-contain shrink-0 hidden sm:block" />
+          <span className="font-display text-xs sm:text-sm font-bold tracking-wider sm:tracking-widest text-amber-200 uppercase truncate">
             STORY LOG // {title}
           </span>
         </div>
@@ -73,7 +73,7 @@ export const StoryCutsceneModal: React.FC<StoryCutsceneModalProps> = ({
             soundManager.playSfx('ui_click');
             onComplete();
           }}
-          className="px-4 py-1.5 rounded bg-red-950/90 hover:bg-red-800 border border-amber-400/60 text-xs font-bold text-amber-200 flex items-center gap-1.5 cursor-pointer"
+          className="px-3 sm:px-4 py-1.5 rounded-lg bg-red-950/90 hover:bg-red-800 border border-amber-400/60 text-[10px] sm:text-xs font-bold text-amber-200 flex items-center gap-1.5 cursor-pointer shrink-0 transition"
         >
           <FastForward className="w-3.5 h-3.5" />
           SKIP CUTSCENE

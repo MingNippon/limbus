@@ -1,0 +1,18 @@
+{
+  "name": "Limbus Company — Web Edition",
+  "short_name": "Limbus",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#09080a",
+  "theme_color": "#09080a",
+  "icons": [
+    {
+      "src": "/assets/icons/attack/coin.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

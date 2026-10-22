@@ -36,7 +36,7 @@ interface PullResultItem {
   sinnerNumber: string;
   sinnerId: number;
   rarityLabel: string;
-  tierRank: 1 | 3 | 4; // 1 = 0 ID, 3 = 000 ID, 4 = E.G.O
+  tierRank: 1 | 2 | 3 | 4; // 1 = 0 ID, 2 = 00 ID, 3 = 000 ID, 4 = E.G.O
   isHighTier: boolean;
   isFakeout: boolean;
   isDuplicate: boolean;
@@ -214,7 +214,7 @@ export const ExtractScreen: React.FC<ExtractScreenProps> = ({ save, onUpdateSave
   }, []);
 
   // Highest rarity in current pull batch (controls lightning & engine core color!)
-  const highestTierInBatch: 1 | 3 | 4 = pullResults.reduce<1 | 3 | 4>(
+  const highestTierInBatch: 1 | 2 | 3 | 4 = pullResults.reduce<1 | 2 | 3 | 4>(
     (max, item) => (item.tierRank > max ? item.tierRank : max),
     1
   );
@@ -330,8 +330,42 @@ export const ExtractScreen: React.FC<ExtractScreenProps> = ({ save, onUpdateSave
               revealed: false,
             });
           }
+        } else if (roll < activeBanner.highTierRate + 0.35) {
+          // Rare 00 Identity (Tier 2, Crimson Red Light)
+          const baseIds = IDENTITIES.filter((id) => id.rarity === 1);
+          const picked: IdentityData = baseIds[Math.floor(Math.random() * baseIds.length)];
+          const sinner = SINNERS.find((s) => s.id === picked.sinnerId)!;
+          const isDup = nextUnlockedIds.has(picked.id);
+          const shards = isDup ? 30 : 0;
+          nextUnlockedIds.add(picked.id);
+          if (shards > 0) nextShards[sinner.id] = (nextShards[sinner.id] || 0) + shards;
+          const s3 = picked.skills[2] || picked.skills[0];
+
+          generatedResults.push({
+            index: i,
+            kind: 'identity',
+            id: `${picked.id}_00`,
+            name: `${picked.name} [00 Division]`,
+            worldOrAbno: picked.world,
+            quote: `“${sinner.motto}”`,
+            sinnerName: sinner.name,
+            sinnerNumber: sinner.numberStr,
+            sinnerId: sinner.id,
+            rarityLabel: '00',
+            tierRank: 2,
+            isHighTier: false,
+            isFakeout: false,
+            isDuplicate: isDup,
+            shardsGained: shards,
+            portraitUrl: picked.portraitUrl,
+            splashUrl: `/assets/sprites/sinner_${sinner.id}_art.webp`,
+            emblemUrl: `/assets/sinners/emblem_${sinner.id}.webp`,
+            signatureSkillName: s3.name,
+            signatureSin: s3.sin,
+            revealed: false,
+          });
         } else {
-          // Standard 0 Identity Pull
+          // Standard 0 Identity Pull (Tier 1, Warm Yellow Light)
           const baseIds = IDENTITIES.filter((id) => id.rarity === 1);
           const picked: IdentityData = baseIds[Math.floor(Math.random() * baseIds.length)];
           const sinner = SINNERS.find((s) => s.id === picked.sinnerId)!;
@@ -661,10 +695,10 @@ export const ExtractScreen: React.FC<ExtractScreenProps> = ({ save, onUpdateSave
       </div>
 
       {subTab === 'extract' ? (
-        <div className="flex-1 flex gap-4 overflow-hidden">
-          {/* LEFT: OFFICIAL STEAM BANNER SELECTOR RAIL */}
-          <div className="w-80 flex flex-col gap-2.5 shrink-0 overflow-y-auto pr-1">
-            <div className="text-[11px] font-bold uppercase tracking-widest text-amber-400/90 px-1 flex items-center justify-between">
+        <div className="flex-1 flex flex-col lg:flex-row gap-3 sm:gap-4 overflow-y-auto lg:overflow-hidden min-h-0 touch-scroll">
+          {/* LEFT / TOP: OFFICIAL STEAM BANNER SELECTOR RAIL */}
+          <div className="w-full lg:w-80 flex flex-row lg:flex-col gap-2 sm:gap-2.5 shrink-0 overflow-x-auto lg:overflow-y-auto pr-1 pb-1 lg:pb-0 touch-scroll-x no-scrollbar">
+            <div className="hidden lg:flex text-[11px] font-bold uppercase tracking-widest text-amber-400/90 px-1 items-center justify-between">
               <span>OFFICIAL TARGET BANNERS</span>
               <span className="text-[9px] text-stone-400 font-mono-num">STEAM EXTRACT</span>
             </div>
@@ -677,22 +711,22 @@ export const ExtractScreen: React.FC<ExtractScreenProps> = ({ save, onUpdateSave
                     soundManager.playSfx('ui_click');
                     setSelectedBannerIdx(idx);
                   }}
-                  className={`rounded-xl border-2 text-left transition relative overflow-hidden cursor-pointer group ${
+                  className={`w-52 sm:w-60 lg:w-full shrink-0 rounded-xl border-2 text-left transition relative overflow-hidden cursor-pointer group ${
                     active
-                      ? 'border-amber-300 ring-2 ring-amber-400/70 scale-[1.02] shadow-[0_0_25px_rgba(250,204,21,0.45)]'
+                      ? 'border-amber-300 ring-2 ring-amber-400/70 scale-[1.01] shadow-[0_0_25px_rgba(250,204,21,0.45)]'
                       : 'border-stone-800 opacity-75 hover:opacity-100 hover:border-amber-500/50'
                   }`}
                 >
                   <img
                     src={b.bannerButtonImg}
                     alt={b.title}
-                    className="w-full h-24 object-cover bg-black group-hover:scale-105 transition duration-300"
+                    className="w-full h-16 sm:h-20 lg:h-24 object-cover bg-black group-hover:scale-105 transition duration-300"
                   />
-                  <div className="px-2.5 py-1 bg-black/90 border-t border-amber-500/30 flex items-center justify-between">
-                    <span className="font-display font-bold text-[10px] text-amber-100 truncate">
+                  <div className="px-2 sm:px-2.5 py-1 bg-black/90 border-t border-amber-500/30 flex items-center justify-between">
+                    <span className="font-display font-bold text-[9px] sm:text-[10px] text-amber-100 truncate">
                       {b.title}
                     </span>
-                    <span className="text-[10px] text-amber-400 font-mono-num font-extrabold shrink-0 ml-2">
+                    <span className="text-[9px] sm:text-[10px] text-amber-400 font-mono-num font-extrabold shrink-0 ml-1.5">
                       {Math.round(b.highTierRate * 100)}% 000
                     </span>
                   </div>
@@ -701,7 +735,7 @@ export const ExtractScreen: React.FC<ExtractScreenProps> = ({ save, onUpdateSave
             })}
 
             {/* Rate & Guarantee Info Box */}
-            <div className="mt-auto limbus-panel p-3 rounded-xl text-[11px] text-stone-300 space-y-1">
+            <div className="hidden lg:block mt-auto limbus-panel p-3 rounded-xl text-[11px] text-stone-300 space-y-1">
               <div className="font-display font-bold text-xs text-amber-300 flex items-center gap-1.5">
                 <Award className="w-4 h-4" />
                 EXTRACTION GUARANTEES
@@ -716,8 +750,8 @@ export const ExtractScreen: React.FC<ExtractScreenProps> = ({ save, onUpdateSave
             </div>
           </div>
 
-          {/* RIGHT: OFFICIAL STEAM GACHA TV MONITOR & LIVE ACTION COMBO SHOWCASE */}
-          <div className="flex-1 limbus-crimson-panel rounded-2xl p-5 flex flex-col justify-between relative overflow-hidden border-2 border-amber-400/70">
+          {/* RIGHT / MAIN: OFFICIAL STEAM GACHA TV MONITOR & LIVE ACTION COMBO SHOWCASE */}
+          <div className="flex-1 limbus-crimson-panel rounded-2xl p-3 sm:p-5 flex flex-col justify-between relative overflow-hidden border-2 border-amber-400/70 min-h-[460px] lg:min-h-0">
             {/* Official Steam Gacha Monitor Frame */}
             <img
               src="/assets/steam/gacha/gacha_base_large.webp"
@@ -731,33 +765,33 @@ export const ExtractScreen: React.FC<ExtractScreenProps> = ({ save, onUpdateSave
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/40 pointer-events-none" />
 
             {/* Top Official 1240x500 Steam Target Extraction Poster Banner */}
-            <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-4 bg-black/75 p-3 rounded-xl border border-amber-400/50 shadow-2xl">
+            <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-3 sm:gap-4 bg-black/75 p-2.5 sm:p-3 rounded-xl border border-amber-400/50 shadow-2xl">
               <img
                 src={activeBanner.posterImg}
                 alt={activeBanner.title}
-                className="h-36 w-auto rounded-lg border border-amber-400/70 object-cover shadow-[0_0_30px_rgba(0,0,0,0.95)] shrink-0"
+                className="w-full sm:w-auto h-24 sm:h-36 rounded-lg border border-amber-400/70 object-cover shadow-[0_0_30px_rgba(0,0,0,0.95)] shrink-0"
               />
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 w-full">
                 <span
-                  className="px-2.5 py-0.5 rounded font-bebas text-sm tracking-widest text-black shadow inline-block"
+                  className="px-2 py-0.5 rounded font-bebas text-xs sm:text-sm tracking-widest text-black shadow inline-block"
                   style={{ backgroundColor: activeBanner.accentColor }}
                 >
                   {activeBanner.tag}
                 </span>
-                <h2 className="font-display text-2xl font-black text-amber-100 mt-1.5 truncate">
+                <h2 className="font-display text-sm sm:text-xl lg:text-2xl font-black text-amber-100 mt-1 truncate">
                   {activeBanner.title}
                 </h2>
-                <p className="text-xs text-stone-200 mt-1 leading-relaxed">
+                <p className="text-[10px] sm:text-xs text-stone-200 mt-0.5 leading-snug line-clamp-2">
                   {activeBanner.subtitle}
                 </p>
-                <div className="text-[10px] text-amber-300/90 font-mono-num mt-1.5">
-                  ★ LIVE COMBAT SPRITE PREVIEW: Nhân vật bên dưới tự động biểu diễn chuỗi đòn chém S1 → S2 → S3 từ bản Steam!
+                <div className="text-[9px] sm:text-[10px] text-amber-300/90 font-mono-num mt-1 line-clamp-1">
+                  ★ LIVE COMBAT SPRITE PREVIEW: Nhân vật biểu diễn chuỗi đòn chém S1 → S2 → S3!
                 </div>
               </div>
             </div>
 
             {/* Center Featured 000 Identity Cards with LIVE MULTI-POSE COMBAT ANIMATION */}
-            <div className="relative z-10 grid grid-cols-4 gap-3.5 my-auto py-2">
+            <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3.5 my-auto py-2">
               {activeBanner.featuredSprites.map((fallbackSpriteUrl, idx) => {
                 const sId = activeBanner.featuredSinnerIds[idx];
                 const sObj = SINNERS.find((s) => s.id === sId)!;
@@ -826,19 +860,19 @@ export const ExtractScreen: React.FC<ExtractScreenProps> = ({ save, onUpdateSave
             </div>
 
             {/* Bottom Extraction Trigger Buttons */}
-            <div className="relative z-10 flex items-center justify-center gap-6 pt-1">
+            <div className="relative z-10 flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-6 pt-1">
               <button
                 onClick={() => initiateExtraction(1)}
-                className="px-8 py-3.5 rounded-xl bg-stone-950/95 hover:bg-stone-900 border-2 border-amber-400/80 text-left transition hover:scale-105 cursor-pointer shadow-xl flex items-center gap-4"
+                className="w-full sm:w-auto px-5 sm:px-8 py-2.5 sm:py-3.5 rounded-xl bg-stone-950/95 hover:bg-stone-900 border-2 border-amber-400/80 text-left transition hover:scale-105 cursor-pointer shadow-xl flex items-center justify-center sm:justify-start gap-3 sm:gap-4"
               >
-                <div className="w-11 h-11 rounded-full bg-amber-500/20 border border-amber-400 flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-amber-300" />
+                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-amber-500/20 border border-amber-400 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300" />
                 </div>
                 <div>
-                  <div className="font-bebas text-2xl text-amber-200 tracking-wider leading-none">
+                  <div className="font-bebas text-xl sm:text-2xl text-amber-200 tracking-wider leading-none">
                     1× EXTRACT
                   </div>
-                  <div className="text-xs font-mono-num text-rose-300 font-bold mt-1">
+                  <div className="text-[10px] sm:text-xs font-mono-num text-rose-300 font-bold mt-0.5">
                     130 Lunacy
                   </div>
                 </div>
@@ -846,16 +880,16 @@ export const ExtractScreen: React.FC<ExtractScreenProps> = ({ save, onUpdateSave
 
               <button
                 onClick={() => initiateExtraction(10)}
-                className="px-10 py-3.5 rounded-xl bg-gradient-to-r from-red-800 via-amber-500 to-yellow-400 hover:brightness-110 border-2 border-white text-left transition hover:scale-105 cursor-pointer shadow-[0_0_45px_rgba(250,204,21,0.65)] flex items-center gap-4"
+                className="w-full sm:w-auto px-6 sm:px-10 py-2.5 sm:py-3.5 rounded-xl bg-gradient-to-r from-red-800 via-amber-500 to-yellow-400 hover:brightness-110 border-2 border-white text-left transition hover:scale-105 cursor-pointer shadow-[0_0_45px_rgba(250,204,21,0.65)] flex items-center justify-center sm:justify-start gap-3 sm:gap-4"
               >
-                <div className="w-12 h-12 rounded-full bg-black/80 border-2 border-amber-300 flex items-center justify-center">
-                  <Flame className="w-6 h-6 text-amber-300 animate-pulse" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-black/80 border-2 border-amber-300 flex items-center justify-center shrink-0">
+                  <Flame className="w-5 h-5 sm:w-6 sm:h-6 text-amber-300 animate-pulse" />
                 </div>
                 <div>
-                  <div className="font-bebas text-3xl text-black tracking-wider leading-none">
+                  <div className="font-bebas text-xl sm:text-3xl text-black tracking-wider leading-none">
                     10× EXTRACT (GUARANTEED 000 / E.G.O!)
                   </div>
-                  <div className="text-xs font-mono-num text-black font-extrabold mt-1">
+                  <div className="text-[10px] sm:text-xs font-mono-num text-black font-extrabold mt-0.5">
                     1,300 Lunacy • +10 Ideality
                   </div>
                 </div>
@@ -976,26 +1010,28 @@ export const ExtractScreen: React.FC<ExtractScreenProps> = ({ save, onUpdateSave
       {(stage === 'lever_ready' || stage === 'door_blast') && (
         <div
           onMouseUp={handleStopChargeLever}
-          className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-between py-10 px-6 overflow-hidden select-none"
+          className="fixed inset-0 z-50 bg-[#08060a]/98 flex flex-col items-center justify-between py-6 sm:py-10 px-4 sm:px-6 overflow-hidden select-none"
         >
-          {/* Dynamic Core Aura */}
+          {/* Dynamic Core Resonance Aura (Gold / Red / Orange / Purple) */}
           <div
             className="absolute inset-0 transition-all duration-300 pointer-events-none"
             style={{
               background:
                 highestTierInBatch === 4
-                  ? `radial-gradient(circle at center, rgba(168,85,247,${0.25 + leverProgress / 160}) 0%, rgba(220,38,38,0.2) 45%, #050406 80%)`
+                  ? `radial-gradient(circle at center, rgba(168,85,247,${0.35 + leverProgress / 140}) 0%, rgba(220,38,38,0.25) 45%, #050406 80%)`
                   : highestTierInBatch === 3
-                  ? `radial-gradient(circle at center, rgba(250,204,21,${0.25 + leverProgress / 160}) 0%, rgba(185,28,28,0.2) 45%, #050406 80%)`
-                  : `radial-gradient(circle at center, rgba(220,38,38,${0.2 + leverProgress / 200}) 0%, #050406 75%)`,
+                  ? `radial-gradient(circle at center, rgba(245,158,11,${0.35 + leverProgress / 140}) 0%, rgba(220,38,38,0.3) 45%, #050406 80%)`
+                  : highestTierInBatch === 2
+                  ? `radial-gradient(circle at center, rgba(239,68,68,${0.35 + leverProgress / 140}) 0%, rgba(153,27,27,0.3) 45%, #050406 80%)`
+                  : `radial-gradient(circle at center, rgba(234,179,8,${0.25 + leverProgress / 180}) 0%, #050406 75%)`,
             }}
           />
 
-          {/* Top Skip Button */}
-          <div className="relative z-20 w-full max-w-5xl flex items-center justify-between">
+          {/* Top Info & Skip Bar */}
+          <div className="relative z-20 w-full max-w-5xl flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <span className="px-3 py-1 rounded bg-red-950 border border-amber-400/60 font-bebas text-lg tracking-widest text-amber-300">
-                MEPHISTOPHELES EXTRACTION ENGINE // CORRIDOR RESONANCE
+              <span className="px-3 py-1 rounded bg-red-950/90 border border-amber-400/60 font-bebas text-sm sm:text-base tracking-widest text-amber-300 shadow">
+                MEPHISTOPHELES EXTRACTION // CORRIDOR RESONANCE
               </span>
             </div>
             <button
@@ -1004,104 +1040,171 @@ export const ExtractScreen: React.FC<ExtractScreenProps> = ({ save, onUpdateSave
                 handleRevealAll();
                 setStage('summary');
               }}
-              className="px-4 py-1.5 rounded bg-stone-900 hover:bg-red-900 border border-amber-400/60 text-xs font-bold text-amber-200 flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-1.5 rounded-lg bg-stone-900/90 hover:bg-red-900 border border-amber-400/60 text-xs font-bold text-amber-200 flex items-center gap-1.5 cursor-pointer shadow-lg transition"
             >
               <FastForward className="w-4 h-4" />
               SKIP TO SUMMARY
             </button>
           </div>
 
-          {/* Center Engine Gate & Chain Lever */}
+          {/* Center Vault Door & Iron Chains */}
           {stage === 'door_blast' ? (
             <div className="relative z-20 my-auto flex flex-col items-center justify-center animate-heavy-shake">
+              {/* Full-Screen Glass Shatter Layer */}
+              <img
+                src="/assets/steam/gacha/MainUI_Gacha_4_EgoGlass.webp"
+                alt="Glass Shatter"
+                className="fixed inset-0 w-full h-full object-cover pointer-events-none z-30 animate-ping opacity-95"
+              />
+              <img
+                src="/assets/steam/gacha/MainUI_Gacha_4_EgoGlass.webp"
+                alt="Glass Shatter Overlay"
+                className="fixed inset-0 w-full h-full object-cover pointer-events-none z-40 scale-125 opacity-80"
+              />
+
               <div className="relative flex items-center justify-center">
+                {/* Door Flare Starburst */}
                 <img
                   src="/assets/steam/gacha/Fx_T_UI_MD8_DoorFlare.webp"
                   alt=""
-                  className="w-96 h-96 object-contain animate-ping absolute pointer-events-none"
+                  className="w-[480px] h-[480px] object-contain animate-ping absolute pointer-events-none"
+                />
+                {/* Flying / Bursting Chain Fragments */}
+                <img
+                  src="/assets/steam/gacha/Fx_T_UI_Ego5_TierUp_Chain.webp"
+                  alt=""
+                  className="w-[520px] h-[520px] object-contain absolute pointer-events-none animate-pulse scale-125"
                 />
                 <img
                   src="/assets/steam/gacha/mirror_dungeon_door_image_0.webp"
                   alt="Mephistopheles Open Gate"
-                  className="w-[460px] h-auto object-contain drop-shadow-[0_0_60px_#facc15]"
+                  className="w-[360px] sm:w-[460px] h-auto object-contain drop-shadow-[0_0_80px_#facc15] relative z-20"
                 />
               </div>
-              <div className="font-bebas text-6xl tracking-[0.25em] text-white drop-shadow-[0_0_40px_#facc15] mt-4">
-                SHATTERING THE MIRROR WORLD!!
+
+              <div className="font-bebas text-3xl sm:text-6xl tracking-[0.2em] text-white drop-shadow-[0_0_40px_#facc15] mt-4 text-center z-20">
+                SHATTERING THE CHAINS OF DESTINY!!
               </div>
             </div>
           ) : (
-            <div className="relative z-20 flex flex-col items-center my-auto">
-              {/* Official Steam Mephistopheles Iron Chains Across Screen */}
-              <img
-                src="/assets/steam/gacha/gacharesult_chain.webp"
-                alt=""
-                className={`w-[720px] max-w-[90vw] h-auto object-contain mb-3 opacity-90 ${
-                  isDraggingLever ? 'animate-chain-vibrate' : ''
-                }`}
-              />
-
-              {/* Official Mephistopheles Chamber Door & Spinning Clockwork Core */}
+            <div className="relative z-20 flex flex-col items-center my-auto w-full max-w-xl">
+              {/* Mephistopheles Chamber Door wrapped in Authentic Heavy Iron Chains */}
               <div className="relative flex items-center justify-center">
+                {/* Diagonal Heavy Chains Wrapped Across the Vault */}
+                <img
+                  src="/assets/steam/gacha/chain1.webp"
+                  alt=""
+                  className={`absolute -top-6 -left-10 w-64 sm:w-80 h-auto object-contain -rotate-30 pointer-events-none z-20 opacity-95 drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)] ${
+                    isDraggingLever ? 'animate-chain-vibrate' : ''
+                  }`}
+                />
+                <img
+                  src="/assets/steam/gacha/chain2.webp"
+                  alt=""
+                  className={`absolute -bottom-6 -right-10 w-64 sm:w-80 h-auto object-contain rotate-30 pointer-events-none z-20 opacity-95 drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)] ${
+                    isDraggingLever ? 'animate-chain-vibrate' : ''
+                  }`}
+                />
+
+                {/* Vault Door Base */}
                 <img
                   src="/assets/steam/gacha/mirror_dungeon_door_image_close.webp"
                   alt="Mephistopheles Chamber Door"
-                  className="w-[420px] h-auto object-contain rounded-2xl border-2 border-amber-500/60 shadow-[0_0_90px_rgba(220,38,38,0.75)]"
+                  className={`w-[320px] sm:w-[420px] h-auto object-contain rounded-2xl border-2 transition-all duration-300 shadow-[0_0_90px_rgba(0,0,0,0.9)] ${
+                    highestTierInBatch === 4
+                      ? 'border-purple-400 shadow-[0_0_80px_rgba(168,85,247,0.7)]'
+                      : highestTierInBatch === 3
+                      ? 'border-amber-300 shadow-[0_0_80px_rgba(245,158,11,0.75)]'
+                      : highestTierInBatch === 2
+                      ? 'border-red-500 shadow-[0_0_70px_rgba(239,68,68,0.7)]'
+                      : 'border-yellow-600/70 shadow-[0_0_50px_rgba(234,179,8,0.5)]'
+                  } ${isDraggingLever ? 'animate-heavy-shake' : ''}`}
                 />
-                <div className="absolute inset-0 flex items-center justify-center">
+
+                {/* Horizontal Heavy Locking Iron Chain Bar */}
+                <img
+                  src="/assets/steam/gacha/gacharesult_chain.webp"
+                  alt=""
+                  className={`absolute inset-x-0 top-1/2 -translate-y-1/2 w-full h-auto object-contain pointer-events-none z-20 opacity-95 drop-shadow-[0_8px_20px_rgba(0,0,0,0.95)] ${
+                    isDraggingLever ? 'animate-chain-vibrate' : ''
+                  }`}
+                />
+
+                {/* Central Core with Official Glowing Rank Emblem */}
+                <div className="absolute inset-0 flex items-center justify-center z-30">
                   <div
-                    className={`w-36 h-36 rounded-full flex flex-col items-center justify-center border-2 backdrop-blur-xs transition-all ${
+                    className={`w-36 h-36 sm:w-44 sm:h-44 rounded-full flex flex-col items-center justify-center border-2 backdrop-blur-xs transition-all ${
                       highestTierInBatch === 4
-                        ? 'bg-purple-950/85 border-purple-300 shadow-[0_0_50px_#c084fc]'
+                        ? 'bg-purple-950/90 border-purple-300 shadow-[0_0_60px_#c084fc]'
                         : highestTierInBatch === 3
-                        ? 'bg-amber-950/85 border-amber-300 shadow-[0_0_50px_#facc15]'
-                        : 'bg-red-950/85 border-red-400'
+                        ? 'bg-amber-950/90 border-amber-300 shadow-[0_0_60px_#f59e0b]'
+                        : highestTierInBatch === 2
+                        ? 'bg-red-950/90 border-red-400 shadow-[0_0_50px_#ef4444]'
+                        : 'bg-stone-950/90 border-yellow-500 shadow-[0_0_35px_#eab308]'
                     }`}
                   >
-                    <Zap
-                      className={`w-10 h-10 ${
+                    <img
+                      src={
                         highestTierInBatch === 4
-                          ? 'text-purple-300'
+                          ? '/assets/steam/gacha/MainUI_Gacha_4_Card_PieceHighlight.webp'
                           : highestTierInBatch === 3
-                          ? 'text-amber-300'
-                          : 'text-red-300'
-                      } ${isDraggingLever ? 'animate-bounce' : ''}`}
+                          ? '/assets/steam/gacha/MainUI_Gacha_3_Rank3.webp'
+                          : highestTierInBatch === 2
+                          ? '/assets/steam/gacha/MainUI_Gacha_3_Rank2.webp'
+                          : '/assets/steam/gacha/MainUI_Gacha_3_Rank1.webp'
+                      }
+                      alt="Extraction Rank"
+                      className={`h-12 sm:h-14 w-auto object-contain ${
+                        isDraggingLever ? 'animate-pulse scale-110' : ''
+                      }`}
                     />
-                    <span className="font-bebas text-4xl text-white mt-0.5">{leverProgress}%</span>
+                    <span className="font-bebas text-2xl sm:text-3xl text-white mt-1 drop-shadow">
+                      {leverProgress}%
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Iron Chain & Pull Handle */}
+              {/* Extraction Machine Crank & Pull Handle */}
               <div
-                className={`flex flex-col items-center mt-2 ${
+                className={`flex flex-col items-center mt-3 sm:mt-5 ${
                   isDraggingLever ? 'animate-chain-vibrate' : ''
                 }`}
               >
-                <div className="w-3 h-10 bg-gradient-to-b from-amber-500 via-stone-500 to-amber-700 border-x border-amber-300" />
+                <div className="w-2.5 h-8 bg-gradient-to-b from-amber-500 via-stone-500 to-amber-700 border-x border-amber-300" />
                 <button
                   onMouseDown={handleStartChargeLever}
                   onTouchStart={handleStartChargeLever}
                   onClick={triggerDoorBlastSequence}
-                  className="px-10 py-3.5 rounded-2xl bg-gradient-to-b from-red-700 via-red-900 to-black border-2 border-amber-300 shadow-[0_0_40px_rgba(250,204,21,0.75)] hover:scale-105 active:translate-y-4 transition cursor-pointer flex flex-col items-center"
+                  className={`px-8 sm:px-12 py-3 sm:py-4 rounded-2xl border-2 transition cursor-pointer flex flex-col items-center shadow-2xl active:translate-y-2 ${
+                    highestTierInBatch === 4
+                      ? 'bg-gradient-to-b from-purple-800 via-purple-950 to-black border-purple-300 shadow-[0_0_40px_rgba(192,132,252,0.8)]'
+                      : highestTierInBatch === 3
+                      ? 'bg-gradient-to-b from-amber-600 via-red-950 to-black border-amber-300 shadow-[0_0_40px_rgba(245,158,11,0.85)]'
+                      : highestTierInBatch === 2
+                      ? 'bg-gradient-to-b from-red-700 via-red-950 to-black border-red-400 shadow-[0_0_35px_rgba(239,68,68,0.8)]'
+                      : 'bg-gradient-to-b from-stone-800 via-stone-950 to-black border-amber-400 shadow-[0_0_25px_rgba(234,179,8,0.5)]'
+                  } hover:scale-105`}
                 >
-                  <span className="font-bebas text-3xl tracking-[0.18em] text-amber-200">
-                    HOLD OR CLICK TO PULL CHAIN!!
+                  <span className="font-bebas text-2xl sm:text-3xl tracking-[0.16em] text-amber-200">
+                    HOLD OR CLICK TO SHATTER CHAINS!!
                   </span>
-                  <span className="text-xs text-stone-300">
-                    Kéo cần gạt động cơ Mephistopheles để mở cổng Thế Giới Gương
+                  <span className="text-[11px] sm:text-xs text-stone-300">
+                    Kéo cần gạt động cơ Mephistopheles để phá vỡ xiềng xích và mở Thế Giới Gương
                   </span>
                 </button>
               </div>
             </div>
           )}
 
-          <div className="relative z-20 text-xs font-mono-num text-amber-300/80 uppercase tracking-widest">
+          <div className="relative z-20 text-[11px] sm:text-xs font-mono-num text-amber-300/90 uppercase tracking-widest text-center">
             {highestTierInBatch === 4
-              ? '⚡ ABNORMALITY E.G.O SIGNAL DETECTED IN CHAMBER ⚡'
+              ? '⚡ ABNORMALITY E.G.O SIGNAL DETECTED IN CHAMBER (VIOLET RESONANCE) ⚡'
               : highestTierInBatch === 3
-              ? '★ GOLDEN 000 IDENTITY SIGNAL DETECTED IN CHAMBER ★'
-              : 'STANDARD MIRROR RESONANCE READY'}
+              ? '★ GOLDEN 000 IDENTITY DETECTED (FIERY ORANGE RESONANCE) ★'
+              : highestTierInBatch === 2
+              ? '◆ 00 IDENTITY DETECTED (CRIMSON RED RESONANCE) ◆'
+              : '● STANDARD 0 IDENTITY DETECTED (WARM YELLOW RESONANCE) ●'}
           </div>
         </div>
       )}
@@ -1178,54 +1281,67 @@ export const ExtractScreen: React.FC<ExtractScreenProps> = ({ save, onUpdateSave
                       isBeingFakeout
                         ? 'animate-heavy-shake bg-gradient-to-b from-amber-400 via-red-600 to-purple-900 border-white shadow-[0_0_60px_#facc15]'
                         : displayedTier === 4
-                        ? 'bg-gradient-to-b from-purple-950 via-red-950 to-black border-purple-400 shadow-[0_0_35px_rgba(192,132,252,0.7)]'
+                        ? 'bg-gradient-to-b from-purple-950 via-red-950 to-black border-purple-400 shadow-[0_0_35px_rgba(192,132,252,0.8)]'
                         : displayedTier === 3
-                        ? 'bg-gradient-to-b from-amber-900/80 via-red-950 to-black border-amber-300 shadow-[0_0_35px_rgba(250,204,21,0.65)]'
-                        : 'bg-gradient-to-b from-stone-900 via-stone-950 to-black border-red-800/70 hover:border-amber-400/70'
+                        ? 'bg-gradient-to-b from-amber-900/90 via-red-950 to-black border-amber-300 shadow-[0_0_35px_rgba(245,158,11,0.85)]'
+                        : displayedTier === 2
+                        ? 'bg-gradient-to-b from-red-900/90 via-stone-950 to-black border-red-500 shadow-[0_0_30px_rgba(239,68,68,0.8)]'
+                        : 'bg-gradient-to-b from-stone-900 via-stone-950 to-black border-yellow-700/60 shadow-[0_0_20px_rgba(202,138,4,0.4)]'
                     }`}
                   >
-                    {/* Glowing Pillar Beam for 000 / EGO */}
-                    {displayedTier >= 3 && (
+                    {/* Official Heavy Iron Chains Wrapped Around Mirror Pod */}
+                    <img
+                      src="/assets/steam/gacha/chain1.webp"
+                      alt="Iron Chains"
+                      className="absolute inset-0 w-full h-full object-contain pointer-events-none opacity-85 z-10 drop-shadow-[0_4px_12px_rgba(0,0,0,0.95)]"
+                    />
+
+                    {/* Glowing Pillar Beam for 000 / 00 / EGO */}
+                    {displayedTier >= 2 && (
                       <div
                         className="absolute inset-y-0 w-10 animate-beam-pulse pointer-events-none blur-md"
                         style={{
                           background:
                             displayedTier === 4
                               ? 'linear-gradient(to bottom, transparent, #c084fc, transparent)'
-                              : 'linear-gradient(to bottom, transparent, #facc15, transparent)',
+                              : displayedTier === 3
+                              ? 'linear-gradient(to bottom, transparent, #f59e0b, transparent)'
+                              : 'linear-gradient(to bottom, transparent, #ef4444, transparent)',
                         }}
                       />
                     )}
 
-                    {/* Diagonal Iron Chains Overlay */}
-                    <div className="w-full flex items-center justify-between z-10">
-                      <span className="font-mono-num text-[10px] font-bold text-stone-400">
+                    {/* Top Pod Header with Official Rank Emblem */}
+                    <div className="w-full flex items-center justify-between z-20">
+                      <span className="font-mono-num text-[10px] font-bold text-stone-300 bg-black/70 px-1.5 py-0.5 rounded border border-stone-700">
                         POD #{idx + 1}
                       </span>
-                      <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${
-                          displayedTier === 4
-                            ? 'bg-purple-400 text-black'
-                            : displayedTier === 3
-                            ? 'bg-amber-400 text-black'
-                            : 'bg-stone-800 text-stone-300'
-                        }`}
-                      >
-                        {displayedTier === 4 ? 'E.G.O SIGNAL' : displayedTier === 3 ? '000 GOLD' : 'MIRROR'}
-                      </span>
-                    </div>
-
-                    {/* Sinner Silhouette / Emblem */}
-                    <div className="relative z-10 w-24 h-24 rounded-full bg-black/80 border-2 border-amber-400/60 flex items-center justify-center group-hover:scale-110 transition">
                       <img
-                        src={item.emblemUrl}
-                        alt=""
-                        className="w-16 h-16 object-contain opacity-85"
+                        src={
+                          displayedTier === 4
+                            ? '/assets/steam/gacha/MainUI_Gacha_4_Card_PieceHighlight.webp'
+                            : displayedTier === 3
+                            ? '/assets/steam/gacha/MainUI_Gacha_3_Rank3.webp'
+                            : displayedTier === 2
+                            ? '/assets/steam/gacha/MainUI_Gacha_3_Rank2.webp'
+                            : '/assets/steam/gacha/MainUI_Gacha_3_Rank1.webp'
+                        }
+                        alt="Rank"
+                        className="h-6 w-auto object-contain drop-shadow"
                       />
                     </div>
 
-                    <div className="z-10 text-center">
-                      <div className="font-bebas text-lg tracking-widest text-amber-200 group-hover:text-white">
+                    {/* Sinner Silhouette / Emblem */}
+                    <div className="relative z-20 w-24 h-24 rounded-full bg-black/85 border-2 border-amber-400/60 flex items-center justify-center group-hover:scale-110 transition shadow-inner">
+                      <img
+                        src={item.emblemUrl}
+                        alt=""
+                        className="w-16 h-16 object-contain opacity-90"
+                      />
+                    </div>
+
+                    <div className="z-20 text-center bg-black/75 px-3 py-1 rounded-lg border border-amber-500/30">
+                      <div className="font-bebas text-base sm:text-lg tracking-widest text-amber-200 group-hover:text-white">
                         {isBeingFakeout ? '⚡ RARITY UPGRADE!! ⚡' : 'CLICK TO SHATTER'}
                       </div>
                       <div className="text-[10px] text-stone-400">Sinner #{item.sinnerNumber}</div>
@@ -1244,6 +1360,8 @@ export const ExtractScreen: React.FC<ExtractScreenProps> = ({ save, onUpdateSave
                       ? 'bg-gradient-to-b from-purple-900/75 via-red-950/80 to-black border-purple-300 shadow-[0_0_35px_rgba(192,132,252,0.65)]'
                       : item.tierRank === 3
                       ? 'bg-gradient-to-b from-amber-800/70 via-red-950/75 to-black border-amber-300 shadow-[0_0_35px_rgba(250,204,21,0.6)]'
+                      : item.tierRank === 2
+                      ? 'bg-gradient-to-b from-red-900/70 via-stone-950 to-black border-red-500 shadow-[0_0_30px_rgba(239,68,68,0.65)]'
                       : 'bg-stone-950 border-stone-700'
                   }`}
                 >
@@ -1380,7 +1498,7 @@ export const ExtractScreen: React.FC<ExtractScreenProps> = ({ save, onUpdateSave
 
                 {/* Center Character Splash + Battle Sprite & Voice Quote Banner */}
                 <div className="relative z-20 my-auto flex flex-col lg:flex-row items-center justify-center gap-10 max-w-6xl mx-auto w-full">
-                  {/* Character Art & Live Multi-Pose Combat Sprite Showcase */}
+                  {/* Character Art Showcase */}
                   <div className="relative flex items-end justify-center">
                     <img
                       src="/assets/steam/gacha/MainUI_Gacha_4_Card_EgoRing_Left.webp"
@@ -1390,28 +1508,8 @@ export const ExtractScreen: React.FC<ExtractScreenProps> = ({ save, onUpdateSave
                     <img
                       src={item.splashUrl}
                       alt={item.sinnerName}
-                      className="max-h-[410px] w-auto rounded-2xl border-2 border-amber-400/70 shadow-[0_0_60px_rgba(250,204,21,0.5)] object-cover"
+                      className="max-h-[420px] w-auto rounded-2xl border-2 border-amber-400/80 shadow-[0_0_60px_rgba(250,204,21,0.6)] object-cover"
                     />
-                    {/* Live Multi-Pose Combat Action Sprite + Real Weapon Slash VFX */}
-                    <div className="relative -ml-14 mb-2 flex flex-col items-center">
-                      {poseTick > 0 && (
-                        <img
-                          src={`/assets/steam/vfx/slash_${(poseTick % 12) + 1}.webp`}
-                          alt=""
-                          className="absolute inset-0 w-60 h-60 object-contain pointer-events-none z-20 animate-ping"
-                          style={{ animationDuration: '550ms' }}
-                        />
-                      )}
-                      <img
-                        key={poseTick}
-                        src={`/assets/steam/chars/sinner_${item.sinnerId}/${SHOWCASE_POSES[poseTick]}.webp`}
-                        alt={item.name}
-                        className="h-56 w-auto object-contain drop-shadow-[0_10px_25px_rgba(0,0,0,0.98)] transition-transform duration-150 scale-105"
-                      />
-                      <span className="px-2.5 py-0.5 rounded bg-black/90 border border-amber-400/70 text-[10px] font-mono-num font-bold text-amber-300 uppercase tracking-widest shadow-lg">
-                        COMBAT POSE: {SHOWCASE_POSES[poseTick].toUpperCase()}
-                      </span>
-                    </div>
                   </div>
 
                   {/* Right Details & Slanted Quote */}
@@ -1552,11 +1650,7 @@ export const ExtractScreen: React.FC<ExtractScreenProps> = ({ save, onUpdateSave
 
                   <div className="h-28 flex items-center justify-center my-1 z-10 relative">
                     <img
-                      src={
-                        item.isHighTier
-                          ? `/assets/steam/chars/sinner_${item.sinnerId}/${SHOWCASE_POSES[(poseTick + idx) % SHOWCASE_POSES.length]}.webp`
-                          : item.portraitUrl
-                      }
+                      src={item.portraitUrl}
                       alt={item.name}
                       className="max-h-28 w-auto object-contain"
                     />

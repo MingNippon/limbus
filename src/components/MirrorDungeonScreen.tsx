@@ -26,7 +26,7 @@ interface MirrorDungeonScreenProps {
   onStartMirrorBattle: (stage: CantoStage, nodeId: string) => void;
 }
 
-function generateFloorNodes(floor: number): MirrorNode[] {
+export function generateFloorNodes(floor: number): MirrorNode[] {
   const bossPool =
     floor === 1
       ? ['boss_golden_apple', 'boss_kromer']

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { soundManager } from '../audio/SoundManager';
 import { OFFICIAL_MILI_LYRICS } from '../data/steamOfficialData';
 import { ManagerAccount } from '../services/accountService';
+import { getSinnerAvatarUrl } from '../data/sinnersAndIdentities';
 import { Clock, Film, Image as ImageIcon, Play, Sparkles, UserCheck, UserPlus } from 'lucide-react';
 
 interface TitleScreenProps {
@@ -193,9 +194,9 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
         {currentAccount ? (
           <div className="flex flex-wrap items-center justify-center gap-3 px-5 py-2 rounded-2xl bg-black/85 border border-amber-400/70 shadow-2xl">
             <img
-              src={`/assets/sinners/sinner_${currentAccount.avatarSinnerId || 3}.webp`}
+              src={getSinnerAvatarUrl(currentAccount.avatarSinnerId)}
               alt=""
-              className="w-10 h-10 rounded-lg object-cover object-top border border-amber-300"
+              className="w-10 h-10 rounded-lg object-cover object-center border border-amber-300"
             />
             <div className="text-left">
               <div className="flex items-center gap-2">

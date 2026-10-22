@@ -183,6 +183,7 @@ class SoundManagerImpl {
   private ctx: AudioContext | null = null;
   private sfxCache: Map<string, HTMLAudioElement> = new Map();
   private bgmAudio: HTMLAudioElement | null = null;
+  private currentVoiceAudio: HTMLAudioElement | null = null;
   private currentBgmKey: BgmKey = 'none';
   private contextBgmKey: BgmKey = 'lobby';
   private jukeboxOverrideKey: BgmKey | 'auto' = 'auto';
@@ -359,11 +360,45 @@ class SoundManagerImpl {
     }
   }
 
-  public playEgoVoice(sinnerId: number) {
+  public stopVoice() {
+    if (this.currentVoiceAudio) {
+      try {
+        this.currentVoiceAudio.pause();
+        this.currentVoiceAudio.currentTime = 0;
+        this.currentVoiceAudio.src = '';
+      } catch {
+        // ignore
+      }
+      this.currentVoiceAudio = null;
+    }
+  }
+
+  public playVoiceAudio(url: string, volumeScale = 0.95): boolean {
     this.resumeBgmIfNeeded();
-    if (this.sfxMuted) return;
+    if (this.sfxMuted) return false;
+    this.stopVoice();
+    try {
+      const audio = new Audio(url);
+      audio.volume = Math.min(1, Math.max(0, this.sfxVolume * volumeScale));
+      const p = audio.play();
+      if (p !== undefined) {
+        p.catch(() => {});
+      }
+      this.currentVoiceAudio = audio;
+      audio.onended = () => {
+        if (this.currentVoiceAudio === audio) {
+          this.currentVoiceAudio = null;
+        }
+      };
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  public playEgoVoice(sinnerId: number) {
     const clamped = Math.min(12, Math.max(1, sinnerId));
-    this.playAudioFile(`/assets/audio/ego/ego_sinner_${clamped}.wav`, 0.95, 1.0);
+    return this.playVoiceAudio(`/assets/audio/ego/ego_sinner_${clamped}.wav`, 0.95);
   }
 
   private playAudioFile(url: string, volumeScale = 1.0, playbackRate = 1.0): boolean {
@@ -381,6 +416,14 @@ class SoundManagerImpl {
   public playSfx(key: SfxKey) {
     this.resumeBgmIfNeeded();
     if (this.sfxMuted) return;
+
+    if (key.startsWith('vo_')) {
+      const fileUrl = AUDIO_FILE_MAP[key];
+      if (fileUrl) {
+        this.playVoiceAudio(fileUrl, 0.95);
+      }
+      return;
+    }
 
     if (key === 'clash_clang') {
       const clip = PARRY_CLIPS[this.parryIndex % PARRY_CLIPS.length];

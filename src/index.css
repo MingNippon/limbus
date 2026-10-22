@@ -1,5 +1,29 @@
 @import "tailwindcss";
 
+/* ==================== MOBILE / RESPONSIVE VARIANTS ====================
+   Desktop layout (>=1024px wide & >500px tall) stays exactly as designed.
+   Use these override variants to adapt for phones:
+   - max-sm: / max-md: / max-lg:  -> width-based (Tailwind built-in)
+   - short:     -> very short viewport, i.e. phone held LANDSCAPE (height <= 500px)
+   - portrait:  -> device held PORTRAIT
+   - touch:     -> coarse pointer (finger) devices
+*/
+@custom-variant short (@media (max-height: 500px));
+@custom-variant portrait (@media (orientation: portrait));
+@custom-variant landscape (@media (orientation: landscape));
+@custom-variant touch (@media (pointer: coarse));
+
+/* Container-query variants for the combat <LandscapeStage> (stay correct even when the stage
+   is rotated 90° on a portrait phone, where viewport media queries would be wrong). */
+@custom-variant stage-short (@container stage (max-height: 500px));
+@custom-variant stage-narrow (@container stage (max-width: 1023px));
+@custom-variant stage-xs (@container stage (max-width: 740px));
+
+.lcb-stage {
+  container-type: size;
+  container-name: stage;
+}
+
 @font-face {
   font-family: 'LimbusMikodacs';
   src: url('/assets/steam/fonts/Mikodacs.ttf') format('truetype');
@@ -32,12 +56,83 @@
     --font-mono: 'JetBrains Mono', monospace;
   }
 
+  html,
+  body,
+  #root {
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+  }
+
   body {
     font-family: var(--font-sans);
     background-color: #09080a;
     color: #eae4dc;
     overflow: hidden;
     user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    overscroll-behavior: none;
+    touch-action: manipulation;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  input,
+  textarea {
+    user-select: text;
+    -webkit-user-select: text;
+  }
+
+  /* iOS zooms in when focusing inputs < 16px; prevent that on touch devices */
+  @media (pointer: coarse) {
+    input,
+    textarea,
+    select {
+      font-size: max(16px, 1em) !important;
+    }
+  }
+}
+
+/* Safe-area (notch / home indicator) helpers */
+.safe-pt {
+  padding-top: env(safe-area-inset-top);
+}
+.safe-pb {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.safe-px {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Horizontal scroll strips without visible scrollbar (mobile nav / currency chips) */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Smooth momentum scrolling for scrollable panels on iOS & Android */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+
+.touch-scroll-x {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-x;
+}
+
+/* Scrollbars on phones & desktop */
+@media (max-width: 767px), (max-height: 500px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
   }
 }
 

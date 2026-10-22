@@ -13,8 +13,10 @@ import { TitleScreen } from './components/TitleScreen';
 import { LobbyScreen } from './components/LobbyScreen';
 import { SinnersScreen } from './components/SinnersScreen';
 import { DriveScreen } from './components/DriveScreen';
+import { generateFloorNodes } from './components/MirrorDungeonScreen';
 import { ExtractScreen } from './components/ExtractScreen';
 import { BattleScreen } from './components/BattleScreen';
+import { LandscapeStage } from './components/mobile/LandscapeStage';
 import { StoryCutsceneModal } from './components/StoryCutsceneModal';
 import { CodexModal } from './components/CodexModal';
 import { AccountModal } from './components/AccountModal';
@@ -65,6 +67,7 @@ export function App() {
   // Active Stage & Cutscene Pipeline
   const [activeStage, setActiveStage] = useState<CantoStage | null>(null);
   const [activeMirrorNodeId, setActiveMirrorNodeId] = useState<string | null>(null);
+  const [driveMode, setDriveMode] = useState<'story' | 'mirror' | 'luxcavation'>('story');
   const [stagePhase, setStagePhase] = useState<'pre_cutscene' | 'battle' | 'post_cutscene' | null>(
     null
   );
@@ -101,6 +104,13 @@ export function App() {
   const handleLaunchStage = (stage: CantoStage, mirrorNodeId?: string) => {
     setActiveStage(stage);
     setActiveMirrorNodeId(mirrorNodeId || null);
+    if (mirrorNodeId) {
+      setDriveMode('mirror');
+    } else if (stage.id.startsWith('lux_')) {
+      setDriveMode('luxcavation');
+    } else {
+      setDriveMode('story');
+    }
     if (stage.preCutscene && stage.preCutscene.length > 0) {
       setStagePhase('pre_cutscene');
     } else {
@@ -147,7 +157,7 @@ export function App() {
               completedNodeIds: [],
               sinnerHpPercents: survivingState.hpPercents,
               sinnerSpValues: survivingState.spValues,
-              nodes: r.nodes, // Regenerated when entering Mirror tab or below
+              nodes: generateFloorNodes(r.floor + 1),
             };
           } else {
             nextMirror = null;
@@ -349,26 +359,32 @@ export function App() {
 
   if (activeStage && stagePhase === 'battle') {
     return (
-      <div className="w-screen h-screen flex flex-col bg-[#08070a] overflow-hidden">
-        <BattleScreen
-          stage={activeStage}
-          deployedSinners={deployedBattleList}
-          activeGiftIds={
-            activeMirrorNodeId && save.mirrorRun ? save.mirrorRun.collectedGiftIds : []
-          }
-          onVictory={handleBattleVictory}
-          onDefeat={handleBattleDefeat}
-        />
-      </div>
+      <LandscapeStage>
+        <div className="w-full h-full flex flex-col bg-[#08070a] overflow-hidden">
+          <BattleScreen
+            stage={activeStage}
+            deployedSinners={deployedBattleList}
+            activeGiftIds={
+              activeMirrorNodeId && save.mirrorRun ? save.mirrorRun.collectedGiftIds : []
+            }
+            onVictory={handleBattleVictory}
+            onDefeat={handleBattleDefeat}
+          />
+        </div>
+      </LandscapeStage>
     );
   }
 
+  const headerAvatarUrl =
+    SINNERS.find((s) => s.id === (currentAccount?.avatarSinnerId || save.lobbySinnerId || 3))
+      ?.portraitUrl || SINNERS[2].portraitUrl;
+
   return (
-    <div className="w-screen h-screen flex flex-col justify-between bg-[#09080a] text-[#eae4dc] overflow-hidden select-none">
+    <div className="w-full h-full flex flex-col justify-between bg-[#09080a] text-[#eae4dc] overflow-hidden select-none safe-pt safe-px">
       {/* ==================== TOP GLOBAL RESOURCE HUD BAR ==================== */}
-      <header className="relative z-30 h-14 px-6 bg-gradient-to-b from-black via-[#120e14] to-[#0c0a0e] border-b border-amber-500/40 flex items-center justify-between shadow-xl">
+      <header className="relative z-30 h-14 px-6 bg-gradient-to-b from-black via-[#120e14] to-[#0c0a0e] border-b border-amber-500/40 flex items-center justify-between shadow-xl gap-2 max-lg:h-12 max-lg:px-2 short:h-10 max-md:portrait:h-auto max-md:portrait:flex-wrap max-md:portrait:py-1.5 max-md:portrait:gap-y-1.5">
         {/* Left: Executive Manager Profile & Account Switcher */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 max-lg:gap-1.5 min-w-0 shrink-0">
           <button
             type="button"
             onClick={() => {
@@ -376,25 +392,25 @@ export function App() {
               setShowAccountModal(true);
             }}
             title="Hồ Sơ Tài Khoản Quản Lý • Đổi Tài Khoản • Điểm Danh Nhận Lunacy"
-            className="flex items-center gap-3 px-2.5 py-1 rounded-xl bg-black/70 hover:bg-stone-900 border border-amber-400/60 cursor-pointer transition group"
+            className="flex items-center gap-3 px-2.5 py-1 rounded-xl bg-black/70 hover:bg-stone-900 border border-amber-400/60 cursor-pointer transition group max-lg:gap-1.5 max-lg:px-1.5 max-lg:py-0.5 min-w-0"
           >
-            <div className="relative w-9 h-9 rounded-lg overflow-hidden bg-red-950 border-2 border-amber-400 flex items-center justify-center shadow-[0_0_12px_rgba(220,38,38,0.6)]">
+            <div className="relative w-9 h-9 rounded-lg overflow-hidden bg-red-950 border-2 border-amber-400 flex items-center justify-center shadow-[0_0_12px_rgba(220,38,38,0.6)] shrink-0 max-lg:w-8 max-lg:h-8 short:w-7 short:h-7">
               <img
-                src={`/assets/sinners/sinner_${currentAccount?.avatarSinnerId || save.lobbySinnerId || 3}.webp`}
+                src={headerAvatarUrl}
                 alt=""
-                className="w-full h-full object-cover object-top"
+                className="w-full h-full object-cover object-center"
               />
             </div>
-            <div className="text-left">
+            <div className="text-left min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="font-display font-black text-xs sm:text-sm text-amber-200 tracking-wider group-hover:text-white">
+                <span className="font-display font-black text-xs sm:text-sm text-amber-200 tracking-wider group-hover:text-white truncate max-w-[160px] max-lg:max-w-[96px]">
                   {currentAccount?.displayName || 'DANTE'}
                 </span>
-                <span className="px-1.5 py-0.2 rounded bg-amber-500/20 border border-amber-400/60 font-mono-num text-[10px] font-bold text-amber-300">
+                <span className="px-1.5 py-0.2 rounded bg-amber-500/20 border border-amber-400/60 font-mono-num text-[10px] font-bold text-amber-300 shrink-0">
                   LV.{save.managerLevel}
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 text-[10px] text-stone-400 font-mono-num">
+              <div className="flex items-center gap-1.5 text-[10px] text-stone-400 font-mono-num max-lg:hidden">
                 <span>{currentAccount?.uid || 'LCB-GUEST'}</span>
                 <span className="text-amber-300 font-bold flex items-center gap-0.5">
                   • <UserCheck className="w-3 h-3 inline" /> Tài Khoản
@@ -410,57 +426,58 @@ export function App() {
                 soundManager.playSfx('ui_click');
                 setShowAccountModal(true);
               }}
-              className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-rose-500 border border-amber-200 text-black font-extrabold text-[10px] animate-pulse cursor-pointer shadow"
+              className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-rose-500 border border-amber-200 text-black font-extrabold text-[10px] animate-pulse cursor-pointer shadow shrink-0 max-lg:px-1.5"
+              title="Nhận quà điểm danh hàng ngày (+1,300 Lunacy)"
             >
-              🎁 +1,300 LUNACY
+              🎁<span className="max-lg:hidden"> +1,300 LUNACY</span>
             </button>
           )}
         </div>
 
         {/* Center: Currencies (Enkephalin, Modules, Lunacy, Thread, EXP Tickets) */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 max-lg:gap-1.5 max-lg:flex-1 max-lg:min-w-0 max-lg:overflow-x-auto no-scrollbar max-md:portrait:order-last max-md:portrait:w-full max-md:portrait:flex-none max-md:portrait:justify-between">
           <div
-            className="flex items-center gap-1.5 px-3 py-1 rounded bg-black/75 border border-emerald-500/40 text-xs font-mono-num"
+            className="flex items-center gap-1.5 px-3 py-1 rounded bg-black/75 border border-emerald-500/40 text-xs font-mono-num shrink-0 max-lg:px-1.5 max-lg:gap-1 max-lg:text-[11px]"
             title="Enkephalin & Enkephalin Modules"
           >
             <Zap className="w-3.5 h-3.5 text-emerald-400" />
             <span className="text-emerald-300 font-bold">
               {save.enkephalin}/{save.maxEnkephalin}
             </span>
-            <span className="text-stone-500">|</span>
-            <span className="text-emerald-200">Mod: {save.enkephalinModules}</span>
+            <span className="text-stone-500 max-lg:hidden">|</span>
+            <span className="text-emerald-200 max-lg:hidden">Mod: {save.enkephalinModules}</span>
           </div>
 
           <div
-            className="flex items-center gap-1.5 px-3 py-1 rounded bg-black/75 border border-rose-500/50 text-xs font-mono-num"
+            className="flex items-center gap-1.5 px-3 py-1 rounded bg-black/75 border border-rose-500/50 text-xs font-mono-num shrink-0 max-lg:px-1.5 max-lg:gap-1 max-lg:text-[11px]"
             title="Lunacy (Used for Extraction Gacha)"
           >
             <Sparkles className="w-3.5 h-3.5 text-rose-400" />
             <span className="text-rose-200 font-bold">{save.lunacy.toLocaleString()}</span>
-            <span className="text-[10px] text-rose-400 uppercase">Lunacy</span>
+            <span className="text-[10px] text-rose-400 uppercase max-lg:hidden">Lunacy</span>
           </div>
 
           <div
-            className="flex items-center gap-1.5 px-3 py-1 rounded bg-black/75 border border-sky-500/40 text-xs font-mono-num"
+            className="flex items-center gap-1.5 px-3 py-1 rounded bg-black/75 border border-sky-500/40 text-xs font-mono-num shrink-0 max-lg:px-1.5 max-lg:gap-1 max-lg:text-[11px]"
             title="Thread (Used for Uptie & Dispensary)"
           >
             <Flame className="w-3.5 h-3.5 text-sky-400" />
             <span className="text-sky-200 font-bold">{save.thread}</span>
-            <span className="text-[10px] text-sky-400 uppercase">Thread</span>
+            <span className="text-[10px] text-sky-400 uppercase max-lg:hidden">Thread</span>
           </div>
 
           <div
-            className="flex items-center gap-1.5 px-3 py-1 rounded bg-black/75 border border-amber-500/40 text-xs font-mono-num"
+            className="flex items-center gap-1.5 px-3 py-1 rounded bg-black/75 border border-amber-500/40 text-xs font-mono-num shrink-0 max-lg:px-1.5 max-lg:gap-1 max-lg:text-[11px]"
             title="Identity Training EXP Tickets"
           >
             <Ticket className="w-3.5 h-3.5 text-amber-400" />
             <span className="text-amber-200 font-bold">{save.expTickets}</span>
-            <span className="text-[10px] text-amber-400 uppercase">EXP</span>
+            <span className="text-[10px] text-amber-400 uppercase max-lg:hidden">EXP</span>
           </div>
         </div>
 
         {/* Right: Mephistopheles Jukebox, Dante's Notes Codex & Audio Controls */}
-        <div className="relative flex items-center gap-2">
+        <div className="relative flex items-center gap-2 max-lg:gap-1 shrink-0">
           {/* Jukebox Now Playing & Playlist Toggle */}
           <div className="flex items-center rounded-lg bg-purple-950/75 border border-purple-400/60 overflow-hidden shadow">
             <button
@@ -468,11 +485,11 @@ export function App() {
                 soundManager.playSfx('ui_click');
                 setShowJukebox((v) => !v);
               }}
-              className="px-2.5 py-1.5 hover:bg-purple-900/70 text-xs font-bold text-purple-100 flex items-center gap-1.5 cursor-pointer max-w-[230px]"
+              className="px-2.5 py-1.5 hover:bg-purple-900/70 text-xs font-bold text-purple-100 flex items-center gap-1.5 cursor-pointer max-w-[230px] max-lg:px-2"
               title="Mephistopheles OST Jukebox — Chọn bài hát Mili / Studio EIM"
             >
               <Music className="w-3.5 h-3.5 text-amber-300 shrink-0 animate-pulse" />
-              <span className="truncate">
+              <span className="truncate max-lg:hidden">
                 {soundManager.getActiveTrackMeta()?.title || 'Select BGM'}
               </span>
             </button>
@@ -481,7 +498,7 @@ export function App() {
                 soundManager.playSfx('ui_click');
                 soundManager.nextJukeboxTrack();
               }}
-              className="px-2 py-1.5 bg-purple-900/60 hover:bg-purple-800 border-l border-purple-500/40 text-amber-300 cursor-pointer"
+              className="px-2 py-1.5 bg-purple-900/60 hover:bg-purple-800 border-l border-purple-500/40 text-amber-300 cursor-pointer max-sm:hidden"
               title="Bài tiếp theo (Next OST Track)"
             >
               <SkipForward className="w-3.5 h-3.5" />
@@ -489,7 +506,7 @@ export function App() {
           </div>
 
           {showJukebox && (
-            <div className="absolute right-0 top-12 w-80 limbus-panel rounded-xl border-2 border-amber-400/80 p-3 shadow-2xl z-50">
+            <div className="absolute right-0 top-12 w-80 limbus-panel rounded-xl border-2 border-amber-400/80 p-3 shadow-2xl z-50 max-sm:fixed max-sm:right-2 max-sm:left-2 max-sm:w-auto max-sm:top-24 short:fixed short:top-11 short:right-2 short:max-h-[calc(100dvh-3.5rem)] short:overflow-y-auto">
               <div className="flex items-center justify-between border-b border-stone-800 pb-2 mb-2">
                 <div>
                   <div className="font-display text-xs font-black text-amber-200 tracking-wider uppercase">
@@ -629,6 +646,8 @@ export function App() {
             save={save}
             onUpdateSave={setSave}
             onLaunchStage={handleLaunchStage}
+            initialMode={driveMode}
+            onModeChange={setDriveMode}
           />
         )}
         {activeTab === 'extract' && (

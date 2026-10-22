@@ -14,7 +14,7 @@ import {
   setCustomSupabaseConfig,
   testSupabaseConnection,
 } from '../services/accountService';
-import { SINNERS } from '../data/sinnersAndIdentities';
+import { SINNERS, getSinnerAvatarUrl } from '../data/sinnersAndIdentities';
 import { soundManager } from '../audio/SoundManager';
 import {
   UserPlus,
@@ -340,9 +340,9 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                 <div className="flex items-center gap-4">
                   <div className="relative w-20 h-20 rounded-2xl overflow-hidden border-2 border-amber-300 bg-black shadow-xl shrink-0">
                     <img
-                      src={`/assets/sinners/sinner_${currentAccount.avatarSinnerId}.webp`}
+                      src={getSinnerAvatarUrl(currentAccount.avatarSinnerId)}
                       alt={currentAccount.displayName}
-                      className="w-full h-full object-cover object-top"
+                      className="w-full h-full object-cover object-center"
                     />
                     <span className="absolute bottom-0 inset-x-0 bg-black/85 text-center text-[9px] font-mono-num font-bold text-amber-300">
                       LV.{currentAccount.save.managerLevel}
@@ -594,9 +594,9 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                           >
                             <div className="flex items-center gap-3 min-w-0">
                               <img
-                                src={`/assets/sinners/sinner_${acc.avatarSinnerId || 3}.webp`}
+                                src={getSinnerAvatarUrl(acc.avatarSinnerId)}
                                 alt=""
-                                className="w-11 h-11 rounded-lg object-cover object-top border border-amber-400/50 shrink-0"
+                                className="w-11 h-11 rounded-lg object-cover object-center border border-amber-400/50 shrink-0"
                               />
                               <div className="min-w-0">
                                 <div className="flex items-center gap-1.5">
@@ -781,9 +781,9 @@ export const AccountModal: React.FC<AccountModalProps> = ({
                         #{idx + 1}
                       </span>
                       <img
-                        src={`/assets/sinners/sinner_${acc.avatarSinnerId || 3}.webp`}
+                        src={getSinnerAvatarUrl(acc.avatarSinnerId)}
                         alt=""
-                        className="w-11 h-11 rounded-lg object-cover object-top border border-amber-400/50"
+                        className="w-11 h-11 rounded-lg object-cover object-center border border-amber-400/50"
                       />
                       <div>
                         <div className="flex items-center gap-2">
