@@ -1,0 +1,35 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    # Chạy tự động lúc 00:00 UTC mỗi 3 ngày một lần để Supabase không bao giờ bị pause
+    - cron: '0 0 */3 * *'
+  workflow_dispatch: # Cho phép bấm chạy thủ công trên GitHub Actions tab
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase Database
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_KEY" ]; then
+            echo "::warning ::Chưa cấu hình VITE_SUPABASE_URL hoặc VITE_SUPABASE_ANON_KEY trong GitHub Secrets (Settings -> Secrets and variables -> Actions)."
+            echo "Vui lòng thêm 2 Secret này để GitHub tự động ping giữ Supabase luôn thức."
+            exit 0
+          fi
+
+          echo "Pinging Supabase REST API..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY" \
+            "$SUPABASE_URL/rest/v1/lcb_accounts?select=username&limit=1")
+
+          echo "Supabase response status: $STATUS"
+          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 300 ]; then
+            echo "Supabase is active and healthy!"
+          else
+            echo "::warning ::Ping failed with status $STATUS"
+          fi
